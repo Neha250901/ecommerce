@@ -1,0 +1,912 @@
+1]	Admin view- Add products: -
+<?php
+   include 'includes/session.php';
+   include 'includes/slugify.php';
+   if(isset($_POST['add'])){
+ 	$name = $_POST['name'];
+ 	$slug = slugify($name);
+ 	$category = $_POST['category'];
+ 	$price = $_POST['price'];
+ 	$size = $_POST['size'];
+ 	$description = $_POST['description'];
+ 	$filename = $_FILES['photo']['name'];
+
+ 	$conn = $pdo->open();
+
+ 	$stmt = $conn->prepare("SELECT *, COUNT(*) AS numrows FROM products WHERE slug=:slug");
+ 	$stmt->execute(['slug'=>$slug]);
+ 	$row = $stmt->fetch();
+
+ 	if($row['numrows'] > 0){
+ 	$_SESSION['error'] = 'Product already exist';
+ 	}
+ 	else{
+ 	if(!empty($filename)){
+ 	$ext = pathinfo($filename, PATHINFO_EXTENSION);
+ 	$new_filename = $slug.'.'.$ext;
+ 	move_uploaded_file($_FILES['photo']['tmp_name'], '../images/'.$new_filename);
+ 	}
+ 	else{
+ 	$new_filename = '';
+ 	}
+ 	try{
+ 	$stmt = $conn->prepare("INSERT INTO products (category_id, name, description, slug, price, photo) VALUES (:category, :name,
+:description, :slug, :price, :photo)");
+ 	$stmt->execute(['category'=>$category, 'name'=>$name, 'description'=>$description, 'slug'=>$slug, 'price'=>$price, 'photo'=>$new_filename]);
+ 	$_SESSION['success'] = 'Product added successfully';
+ 	}
+ 	catch(PDOException $e){
+ 	$_SESSION['error'] = $e->getMessage();
+ 	}
+ 	}
+ 	$pdo->close();
+   }
+   else{
+ 	$_SESSION['error'] = 'Fill up product form first';
+   }
+   header('location: products.php');
+?>
+2]	Admin view – Delete products: -
+<?php
+   include 'includes/session.php';
+
+   if(isset($_POST['delete'])){
+ 	$id = $_POST['id'];
+
+ 	$conn = $pdo->open();
+
+ 	try{
+ 	$stmt = $conn->prepare("DELETE FROM products WHERE id=:id");
+ 	$stmt->execute(['id'=>$id]);
+
+ 	$_SESSION['success'] = 'Product deleted successfully';
+ 	}
+ 	catch(PDOException $e){
+ 	$_SESSION['error'] = $e->getMessage();
+ 	}
+ 	$pdo->close();
+   }
+   else{
+ 	$_SESSION['error'] = 'Select product to delete first';
+   }
+   header('location: products.php');
+
+?>
+3]	Admin view- Edit/Update Products: -
+<?php
+   include 'includes/session.php';
+   include 'includes/slugify.php';
+
+   if(isset($_POST['edit'])){
+ 	$id = $_POST['id'];
+ 	$name = $_POST['name'];
+ 	$slug = slugify($name);
+ 	$category = $_POST['category'];
+ 	$price = $_POST['price'];
+ 	$description = $_POST['description'];
+
+ 	$conn = $pdo->open();
+
+ 	try{
+ 	$stmt = $conn->prepare("UPDATE products SET name=:name, slug=:slug, category_id=:category, price=:price, description=:description WHERE id=:id");
+ 	$stmt->execute(['name'=>$name, 'slug'=>$slug, 'category'=>$category, 'price'=>$price, 'description'=>$description, 'id'=>$id]);
+ 	$_SESSION['success'] = 'Product updated successfully';
+ 
+
+ 
+ 	$pdo->close();
+   }
+   else{
+ 	$_SESSION['error'] = 'Fill up edit product form first';
+   }
+   header('location: products.php');
+?>
+
+4]	Admin view – Add category: -
+<?php
+   include 'includes/session.php';
+   if(isset($_POST['add'])){
+ 	$name = $_POST['name'];
+ 	$conn = $pdo->open();
+ 	$stmt = $conn->prepare("SELECT *, COUNT(*) AS numrows FROM category WHERE name=:name");
+ 	$stmt->execute(['name'=>$name]);
+ 	$row = $stmt->fetch();
+ 	if($row['numrows'] > 0){
+ 	$_SESSION['error'] = 'Category already exist';
+ 	}
+ 	else{
+ 	try{
+ 	$stmt = $conn->prepare("INSERT INTO category (name) VALUES (:name)");
+ 	$stmt->execute(['name'=>$name]);
+ 	$_SESSION['success'] = 'Category added successfully';
+ 	}
+ 	catch(PDOException $e){
+ 	$_SESSION['error'] = $e->getMessage();
+ 	}
+ 	}
+ 	$pdo->close();
+   }
+   else{
+ 	$_SESSION['error'] = 'Fill up category form first';
+   }
+   header('location: category.php');
+?>
+
+5]	Admin view – Delete Category: -
+<?php
+   include 'includes/session.php';
+   if(isset($_POST['delete'])){
+ 	$id = $_POST['id'];
+
+ 	$conn = $pdo->open();
+ 	try{
+ 	$stmt = $conn->prepare("DELETE FROM category WHERE id=:id");
+ 	$stmt->execute(['id'=>$id]);
+ 	$_SESSION['success'] = 'Category deleted successfully';
+ 
+
+ 
+ 	$pdo->close();
+   }
+   else{
+ 	$_SESSION['error'] = 'Select category to delete first';
+   }
+
+   header('location: category.php');
+
+?>
+
+
+6]	Admin view- Edit/Update Category: -
+<?php
+   include 'includes/session.php';
+   if(isset($_POST['edit'])){
+ 	$id = $_POST['id'];
+ 	$name = $_POST['name'];
+ 	try{
+ 	$stmt = $conn->prepare("UPDATE category SET name=:name WHERE id=:id");
+ 	$stmt->execute(['name'=>$name, 'id'=>$id]);
+ 	$_SESSION['success'] = 'Category updated successfully';
+ 	}
+ 	catch(PDOException $e){
+ 	$_SESSION['error'] = $e->getMessage();
+ 	}
+
+ 	$pdo->close();
+   }
+   else{
+ 	$_SESSION['error'] = 'Fill up edit category form first';
+   }
+   header('location: category.php');
+?>
+
+
+7]	Admin view- Add Users: -
+<?php
+   include 'includes/session.php';
+   if(isset($_POST['add'])){
+ 	$firstname = $_POST['firstname'];
+ 	$lastname = $_POST['lastname'];
+ 	$email = $_POST['email'];
+ 	$password = $_POST['password'];
+ 	$address = $_POST['address'];
+ 	$contact = $_POST['contact'];
+ 	$conn = $pdo->open();
+ 	$stmt = $conn->prepare("SELECT *, COUNT(*) AS numrows FROM users WHERE email=:email");
+ 	$stmt->execute(['email'=>$email]);
+ 	$row = $stmt->fetch();
+ 	if($row['numrows'] > 0){
+ 	$_SESSION['error'] = 'Email already taken';
+ 	}
+ 	else{
+ 	$password = password_hash($password, PASSWORD_DEFAULT);
+ 
+
+ 
+ 	$filename = $_FILES['photo']['name'];
+ 	$now = date('Y-m-d');
+ 	if(!empty($filename)){
+ 	move_uploaded_file($_FILES['photo']['tmp_name'], '../images/'.$filename);
+ 	}
+ 	try{
+ 	$stmt = $conn->prepare("INSERT INTO users (email, password, firstname, lastname, address, contact_info, photo, status, created_on) VALUES (:email, :password, :firstname, :lastname, :address, :contact,
+:photo, :status, :created_on)");
+ 	$stmt->execute(['email'=>$email, 'password'=>$password, 'firstname'=>$firstname, 'lastname'=>$lastname, 'address'=>$address, 'contact'=>$contact, 'photo'=>$filename, 'status'=>1, 'created_on'=>$now]);
+ 	$_SESSION['success'] = 'User added successfully';
+
+ 	}
+ 	catch(PDOException $e){
+ 	$_SESSION['error'] = $e->getMessage();
+ 	}
+ 	}
+ 	$pdo->close();
+   }
+   else{
+ 	$_SESSION['error'] = 'Fill up user form first';
+   }
+   header('location: users.php');
+?>
+8]	Admin view – Delete Users: -
+<?php
+   include 'includes/session.php';
+
+   if(isset($_POST['delete'])){
+ 	$id = $_POST['id'];
+
+ 	$conn = $pdo->open();
+
+ 	try{
+ 	$stmt = $conn->prepare("DELETE FROM users WHERE id=:id");
+ 	$stmt->execute(['id'=>$id]);
+
+ 	$_SESSION['success'] = 'User deleted successfully';
+ 	}
+ 	catch(PDOException $e){
+ 	$_SESSION['error'] = $e->getMessage();
+ 	}
+
+ 	$pdo->close();
+   }
+   else{
+ 	$_SESSION['error'] = 'Select user to delete first';
+   }
+
+   header('location: users.php');
+?>
+
+ 
+
+ 
+9]	Admin view – Edit/Update Users: -
+<?php
+   include'includes/session.php';
+
+   if(isset($_POST['edit'])){
+ 	$id = $_POST['id'];
+ 	$firstname = $_POST['firstname'];
+ 	$lastname = $_POST['lastname'];
+ 	$email = $_POST['email'];
+ 	$password = $_POST['password'];
+ 	$address = $_POST['address'];
+ 	$contact = $_POST['contact'];
+
+ 	$conn = $pdo->open();
+ 	$stmt = $conn->prepare("SELECT * FROM users WHERE id=:id");
+ 	$stmt->execute(['id'=>$id]);
+ 	$row = $stmt->fetch();
+
+ 	if($password == $row['password']){
+ 	$password = $row['password'];
+ 	}
+ 	else{
+ 	$password = password_hash($password, PASSWORD_DEFAULT);
+ 	}
+
+ 	try{
+ 	$stmt = $conn->prepare("UPDATE users SET email=:email, password=:password, firstname=:firstname, lastname=:lastname, address=:address, contact_info=:contact WHERE id=:id");
+ 	$stmt->execute(['email'=>$email, 'password'=>$password, 'firstname'=>$firstname, 'lastname'=>$lastname, 'address'=>$address, 'contact'=>$contact, 'id'=>$id]);
+ 	$_SESSION['success'] = 'User updated successfully';
+
+ 	}
+ 	catch(PDOException $e){
+ 	$_SESSION['error'] = $e->getMessage();
+ 	}
+
+
+ 	$pdo->close();
+   }
+   else{
+ 	$_SESSION['error'] = 'Fill up edit user form first';
+   }
+
+   header('location: users.php');
+
+?>
+
+
+10]	Customer/User view – Homepage: -
+<?php include 'includes/session.php'; ?>
+<?php include 'includes/header.php'; ?>
+<body class="hold-transition skin-blue layout-top-nav">
+<div class="wrapper">
+
+ 
+
+ 
+
+<?php include 'includes/navbar.php'; ?>
+
+<div class="content-wrapper">
+<div class="container">
+
+<!-- Main content -->
+<section class="content">
+<div class="row">
+<div class="col-sm-9">
+<?php
+ 	if(isset($_SESSION['error'])){
+ 	echo "
+<div class='alert alert-danger'>
+	".$_SESSION['error']."	
+</div>	
+";	
+unset($_SESSION['error']);	
+}		
+?>		
+<div id="carousel-example-generic" class="carousel slide" data-ride="carousel">
+<ol class="carousel-indicators">
+<li data-target="#carousel-example-generic" data-slide-to="0" class="active"></li>
+<li data-target="#carousel-example-generic" data-slide-to="1" class=""></li>
+<li data-target="#carousel-example-generic" data-slide-to="2" class=""></li>
+</ol>
+<div class="carousel-inner">
+<div class="item active">
+<img src="images/banner1.jpg" alt="First
+ 
+slide">
+
+
+
+slide">
+
+
+
+slide">
+ 
+
+</div>
+<div class="item">
+<img src="images/banner2.jpg" alt="Second
+
+</div>
+<div class="item">
+<img src="images/banner4.jpg" alt="Third
+
+</div>
+</div>
+<a class="left carousel-control" href="#carousel-
+ 
+example-generic" data-slide="prev">
+<span class="fa fa-angle-left"></span>
+</a>
+<a class="right carousel-control" href="#carousel- example-generic" data-slide="next">
+<span class="fa fa-angle-right"></span>
+</a>
+</div>
+</div>
+<div class="col-sm-3">
+<?php include 'includes/sidebar.php'; ?>
+</div>
+</div>
+
+ 
+
+ 
+</section>
+
+</div>
+</div>
+
+<?php include 'includes/footer.php'; ?>
+</div>
+
+<?php include 'includes/scripts.php'; ?>
+</body>
+</html>
+
+
+11]	Customer/User view - Products: -
+<?php include 'includes/session.php'; ?>
+<?php
+   $conn = $pdo->open();
+
+   $slug = $_GET['product'];
+
+   try{
+
+ 	$stmt = $conn->prepare("SELECT *, products.name AS prodname, category.name AS catname, products.id AS prodid FROM products LEFT JOIN category ON category.id=products.category_id WHERE slug = :slug");
+ 	$stmt->execute(['slug' => $slug]);
+ 	$product = $stmt->fetch();
+
+   }
+   catch(PDOException $e){
+ 	echo "There is some problem in connection: " . $e->getMessage();
+   }
+
+   //page view
+   $now = date('Y-m-d');
+   if($product['date_view'] == $now){
+ 	$stmt = $conn->prepare("UPDATE products SET counter=counter+1 WHERE id=:id");
+ 	$stmt->execute(['id'=>$product['prodid']]);
+   }
+   else{
+ 	$stmt = $conn->prepare("UPDATE products SET counter=1, date_view=:now WHERE id=:id");
+ 	$stmt->execute(['id'=>$product['prodid'], 'now'=>$now]);
+   }
+
+?>
+<?php include 'includes/header.php'; ?>
+<body class="hold-transition skin-blue layout-top-nav">
+<script>
+(function(d, s, id) {
+var js, fjs = d.getElementsByTagName(s)[0]; if (d.getElementById(id)) return;
+js = d.createElement(s); js.id = id; js.src =
+'https://connect.facebook.net/en_US/sdk.js#xfbml=1&version=v2.12'; fjs.parentNode.insertBefore(js, fjs);
+ 
+
+ 
+}(document, 'script', 'facebook-jssdk'));
+</script>
+<div class="wrapper">
+
+<?php include 'includes/navbar.php'; ?>
+
+<div class="content-wrapper">
+<div class="container">
+
+<!-- Main content -->
+<section class="content">
+<div class="row">
+<div class="col-sm-9">
+<div class="callout" id="callout" style="display:none">
+<button type="button" class="close"><span aria- hidden="true">&times;</span></button>
+<span class="message"></span>
+</div>
+<div class="row">
+<div class="col-sm-6">
+<img src="<?php echo (!empty($product['photo']))
+? 'images/'.$product['photo'] : 'images/noimage.jpg'; ?>" width="100%" class="zoom" data-magnify-src="images/large-<?php echo
+$product['photo']; ?>">
+<br><br>
+<form class="form-inline" id="productForm">
+<div class="form-group">
+<div class="input-group col-sm-5">
+
+<span class="input-group-btn">
+<button type="button" id="minus" class="btn btn-default btn-flat btn-lg"><i class="fa fa- minus"></i></button>
+</span>
+<input type="text" name="quantity" id="quantity" class="form-control input-lg" value="1">
+<span class="input-group-btn">
+<button type="button" id="add" class="btn btn-default btn-flat btn-lg"><i class="fa fa-plus"></i>
+</button>
+</span>
+<input type="hidden" value="<?php echo
+$product['prodid']; ?>" name="id">
+</div>
+<button type="submit" class="btn btn- primary btn-lg btn-flat"><i class="fa fa-shopping-cart"></i> Add to Cart</button>
+</div>
+</form>
+</div>
+<div class="col-sm-6">
+<h1 class="page-header"><?php echo
+$product['prodname']; ?></h1>
+<h3><b>&#8377; <?php echo
+number_format($product['price'], 2); ?></b></h3>
+<p><b>Category:</b> <a href="category.php?category=<?php echo $product['cat_slug']; ?>"><?php echo $product['catname']; ?></a></p>
+
+ 
+
+ 
+<p><b>Description:</b></p>
+<p><?php echo $product['description']; ?></p>
+</div>
+</div>
+<br>
+<div class="fb-comments" data- href="http://localhost/ecommerce/product.php?product=<?php echo $slug;
+?>" data-numposts="10" width="100%"></div>
+</div>
+<div class="col-sm-3">
+<?php include 'includes/sidebar.php'; ?>
+</div>
+</div>
+</section>
+
+</div>
+</div>
+<?php $pdo->close(); ?>
+<?php include 'includes/footer.php'; ?>
+</div>
+
+<?php include 'includes/scripts.php'; ?>
+<script>
+$(function(){
+$('#add').click(function(e){ e.preventDefault();
+var quantity = $('#quantity').val(); quantity++;
+$('#quantity').val(quantity);
+});
+$('#minus').click(function(e){ e.preventDefault();
+var quantity = $('#quantity').val(); if(quantity > 1){
+quantity--;
+}
+$('#quantity').val(quantity);
+});
+
+});
+</script>
+</body>
+</html>
+
+
+12]	Customer/User view – Login: -
+<?php include 'includes/session.php'; ?>
+<?php
+  if(isset($_SESSION['user'])){
+ 	header('location: cart_view.php');
+  }
+?>
+<?php include 'includes/header.php'; ?>
+<body class="hold-transition login-page">
+<div class="login-box">
+<?php
+ 	if(isset($_SESSION['error'])){
+ 
+
+ 
+
+ 	<div class='callout callout-danger text-center'>
+ 	<p>".$_SESSION['error']."</p>
+ 	</div>
+";
+ 	unset($_SESSION['error']);
+ 	}
+ 	if(isset($_SESSION['success'])){
+ 	echo "
+ 	<div class='callout callout-success text-center'>
+ 	<p>".$_SESSION['success']."</p>
+ 	</div>
+";
+ 	unset($_SESSION['success']);
+ 	}
+ 	?>
+<div class="login-box-body">
+<p class="login-box-msg">Sign in to start your session</p>
+
+<form action="verify.php" method="POST">
+<div class="form-group has-feedback">
+<input type="email" class="form-control" name="email" placeholder="Email" required>
+<span class="glyphicon glyphicon-envelope form-control- feedback"></span>
+</div>
+<div class="form-group has-feedback">
+<input type="password" class="form-control" name="password" placeholder="Password" required>
+<span class="glyphicon glyphicon-lock form-control- feedback"></span>
+</div>
+<div class="row">
+<div class="col-xs-4">
+<button type="submit" class="btn btn-primary btn-block btn-flat" name="login"><i class="fa fa-sign-in"></i> Sign In</button>
+</div>
+</div>
+</form>
+<br>
+<a href="password_forgot.php">I forgot my password</a><br>
+<a href="signup.php" class="text-center">Register a new membership</a><br>
+<a href="index.php"><i class="fa fa-home"></i> Home</a>
+</div>
+</div>
+
+<?php include 'includes/scripts.php' ?>
+</body>
+</html>
+
+
+13]	Customer view – Add to cart: -
+<?php
+   include 'includes/session.php';
+
+   $conn = $pdo->open();
+ 
+
+ 
+
+   $output = array('error'=>false);
+
+   $id = $_POST['id'];
+   $quantity = $_POST['quantity'];
+
+   if(isset($_SESSION['user'])){
+ 	$stmt = $conn->prepare("SELECT *, COUNT(*) AS numrows FROM cart WHERE user_id=:user_id AND product_id=:product_id");
+ 	$stmt->execute(['user_id'=>$user['id'], 'product_id'=>$id]);
+ 	$row = $stmt->fetch();
+ 	if($row['numrows'] < 1){
+ 	try{
+ 	$stmt = $conn->prepare("INSERT INTO cart (user_id, product_id, quantity) VALUES (:user_id, :product_id, :quantity)");
+ 	$stmt->execute(['user_id'=>$user['id'], 'product_id'=>$id, 'quantity'=>$quantity]);
+ 	$output['message'] = 'Item added to cart';
+
+ 	}
+ 	catch(PDOException $e){
+ 	$output['error'] = true;
+ 	$output['message'] = $e->getMessage();
+ 	}
+ 	}
+ 	else{
+ 	$output['error'] = true;
+ 	$output['message'] = 'Product already in cart';
+ 	}
+   }
+   else{
+ 	if(!isset($_SESSION['cart'])){
+ 	$_SESSION['cart'] = array();
+ 	}
+
+ 	$exist = array();
+
+ 	foreach($_SESSION['cart'] as $row){
+ 	array_push($exist, $row['productid']);
+ 	}
+
+ 	if(in_array($id, $exist)){
+ 	$output['error'] = true;
+ 	$output['message'] = 'Product already in cart';
+ 	}
+ 	else{
+ 	$data['productid'] = $id;
+ 	$data['quantity'] = $quantity;
+
+ 	if(array_push($_SESSION['cart'], $data)){
+ 	$output['message'] = 'Item added to cart';
+ 	}
+ 	else{
+ 	$output['error'] = true;
+ 	$output['message'] = 'Cannot add item to cart';
+ 	}
+ 	}
+
+
+ 
+
+ 
+   }
+
+   $pdo->close();
+   echo json_encode($output);
+
+?>
+
+
+14]	Customer view – Delete from cart: -
+<?php
+   include 'includes/session.php';
+
+   $conn = $pdo->open();
+
+   $output = array('error'=>false);
+   $id = $_POST['id'];
+
+   if(isset($_SESSION['user'])){
+ 	try{
+ 	$stmt = $conn->prepare("DELETE FROM cart WHERE id=:id");
+ 	$stmt->execute(['id'=>$id]);
+ 	$output['message'] = 'Deleted';
+
+ 	}
+ 	catch(PDOException $e){
+ 	$output['message'] = $e->getMessage();
+ 	}
+   }
+   else{
+ 	foreach($_SESSION['cart'] as $key => $row){
+ 	if($row['productid'] == $id){
+ 	unset($_SESSION['cart'][$key]);
+ 	$output['message'] = 'Deleted';
+ 	}
+ 	}
+   }
+
+   $pdo->close();
+   echo json_encode($output);
+
+?>
+15]	Customer view – Edit/Update cart: -
+<?php
+   include 'includes/session.php';
+
+   $conn = $pdo->open();
+
+   $output = array('error'=>false);
+
+
+   if(isset($_SESSION['user'])){
+ 	try{
+ 	$stmt = $conn->prepare("UPDATE cart SET quantity=:quantity
+
+ 
+
+ 
+WHERE id=:id");
+ 	$stmt->execute(['quantity'=>$qty, 'id'=>$id]);
+ 	$output['message'] = 'Updated';
+ 	}
+ 	catch(PDOException $e){
+ 	$output['message'] = $e->getMessage();
+ 	}
+   }
+   else{
+ 	foreach($_SESSION['cart'] as $key => $row){
+ 	if($row['productid'] == $id){
+ 	$_SESSION['cart'][$key]['quantity'] = $qty;
+ 	$output['message'] = 'Updated';
+ 	}
+ 	}
+   }
+
+   $pdo->close();
+   echo json_encode($output);
+
+?>
+16]	Customer view – View cart: -
+<?php include 'includes/session.php'; ?>
+<?php include 'includes/header.php'; ?>
+<body class="hold-transition skin-blue layout-top-nav">
+<div class="wrapper">
+
+<?php include 'includes/navbar.php'; ?>
+
+<div class="content-wrapper">
+<div class="container">
+
+<!-- Main content -->
+<section class="content">
+<div class="row">
+<div class="col-sm-9">
+<h1 class="page-header">YOUR CART</h1>
+<div class="box box-solid">
+<div class="box-body">
+<table class="table table-bordered">
+<thead>
+<th></th>
+<th>Photo</th>
+<th>Name</th>
+<th>Price</th>
+<th width="20%">Quantity</th>
+<th>Subtotal</th>
+</thead>
+<tbody id="tbody">
+</tbody>
+</table>
+</div>
+</div>
+<?php
+ 	if(isset($_SESSION['user'])){
+ 	echo "
+ 	<div id='paypal-button'></div>
+ 
+
+ 
+
+ 	<h4>You need to <a href='login.php'>Login</a> to checkout.</h4>
+";
+ 	}
+ 	?>
+</div>
+<div class="col-sm-3">
+<?php include 'includes/sidebar.php'; ?>
+</div>
+</div>
+</section>
+
+</div>
+</div>
+<?php $pdo->close(); ?>
+<?php include 'includes/footer.php'; ?>
+</div>
+
+<?php include 'includes/scripts.php'; ?>
+<script>
+var total = 0;
+$(function(){
+$(document).on('click', '.cart_delete', function(e){ e.preventDefault();
+var id = $(this).data('id');
+$.ajax({
+type: 'POST',
+url: 'cart_delete.php', data: {id:id}, dataType: 'json',
+success: function(response){ if(!response.error){
+getDetails(); getCart(); getTotal();
+}
+}
+});
+});
+
+$(document).on('click', '.minus', function(e){ e.preventDefault();
+var id = $(this).data('id'); var qty = $('#qty_'+id).val(); if(qty>1){
+qty--;
+}
+$('#qty_'+id).val(qty);
+$.ajax({
+type: 'POST',
+url: 'cart_update.php', data: {
+id: id, qty: qty,
+
+ 
+
+ 
+},
+dataType: 'json',
+success: function(response){ if(!response.error){
+getDetails(); getCart(); getTotal();
+}
+}
+});
+});
+
+$(document).on('click', '.add', function(e){ e.preventDefault();
+var id = $(this).data('id'); var qty = $('#qty_'+id).val(); qty++;
+$('#qty_'+id).val(qty);
+$.ajax({
+type: 'POST',
+url: 'cart_update.php', data: {
+id: id, qty: qty,
+},
+dataType: 'json',
+success: function(response){ if(!response.error){
+getDetails(); getCart(); getTotal();
+}
+}
+});
+});
+
+getDetails(); getTotal();
+
+});
+
+function getDetails(){
+$.ajax({
+type: 'POST',
+url: 'cart_details.php', dataType: 'json',
+success: function(response){
+$('#tbody').html(response);
+getCart();
+}
+});
+}
+
+function getTotal(){
+$.ajax({
+type: 'POST',
+url: 'cart_total.php', dataType: 'json',
+
+ 
+
+ 
+success:function(response){ total = response;
+}
+});
+}
+</script>
+<!-- Paypal Express -->
+<script> paypal.Button.render({
+env: 'sandbox', // change for production if app is live,
+
+client: {
+sandbox:	'ASb1ZbVxG5ZFzCWLdYLi_d1- k5rmSjvBZhxP2etCxBKXaJHxPba13JJD_D3dTNriRbAv3Kp_72cgDvaZ',
+//production: 'AaBHKJFEej4V6yaArjzSx9cuf- UYesQYKqynQVCdBlKuZKawDDzFyuQdidPOBSGEhWaNQnnvfzuFB9SM'
+},
+
+commit: true, // Show a 'Pay Now' button
+
+style: {
+color: 'gold', size: 'small'
+},
+
+payment: function(data, actions) { return actions.payment.create({
+payment: {
+transactions: [
+{
+//total purchase
+amount: {
+total: total, currency: 'USD'
+}
+}
+]
+}
+});
+},
+
+onAuthorize: function(data, actions) {
+return actions.payment.execute().then(function(payment) { window.location = 'sales.php?pay='+payment.id;
+});
+},
+
+}, '#paypal-button');
+</script>
+</body>
+</html
